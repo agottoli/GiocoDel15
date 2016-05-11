@@ -16,7 +16,7 @@ namespace GiocoDel15
             {
                 //Console.WriteLine("Specificare il numero di elementi!");
                 //return;
-                x = 16;
+                x = 25;
             }
 
             Board b = new Board(x);
@@ -31,7 +31,7 @@ namespace GiocoDel15
             string scelta;
             do
             {
-                Console.Write("Risoluzione manuale [1], Gioco manuale [2]: ");
+                Console.Write("Risoluzione automatica [1], Gioco manuale [2]: ");
             }
             while (!(scelta = Console.ReadLine()).Equals("1") && !scelta.Equals("2"));
 
@@ -44,11 +44,41 @@ namespace GiocoDel15
             }
             else
             {
-                Risolvi(b);
+                do
+                {
+                    Console.Write("Classica [1], Copia una configurazione [2]: ");
+                }
+                while (!(scelta = Console.ReadLine()).Equals("1") && !scelta.Equals("2"));
+
+                Board target = null;
+                if (scelta.Equals("2"))
+                {
+                    target = new Board(x);
+                    Caos(target, 500);
+
+                    Console.WriteLine("da così:\n" + b.ToString());
+                    Console.WriteLine("deve diventare così:\n" + target.ToString());
+                    Console.ReadLine();
+                }
+
+                Risolvi(b, target);
 
                 Console.WriteLine(b.ToString());
 
-                if (b.IsSolved())
+                bool res;
+                if (scelta.Equals("2"))
+                {
+                    Console.WriteLine("MIO:\n" + b.ToString());
+                    Console.WriteLine("TARGET:\n" + target.ToString());
+                    res = b.HasSameConfiguration(target);
+                } 
+                else
+                {
+                    res = b.IsSolved();
+                }
+                    
+
+                if (res)
                     Console.WriteLine("Risolto con " + b.GetNumeroMosse() + " mosse.");
                 else
                     Console.WriteLine("Cannato (" + b.GetNumeroMosse() + " mosse).");
@@ -129,18 +159,65 @@ namespace GiocoDel15
             }
         }
 
-        static void Risolvi(Board b)
+        static void Risolvi(Board b, Board bTarget)
         {
-            RisolviTranneUltime2Righe(b);
-            RisolviUltime2Righe(b);
+            int finalRowHole = b.GetSide() - 1;
+            int finalColHole = b.GetSide() - 1;
+            if (bTarget != null)
+            {
+                if (b.Size() != bTarget.Size())
+                {
+                    Console.WriteLine("Hanno dimensioni deverse!!!");
+                    return;
+                }
+                int[] hole = bTarget.IndexToCoordinate(bTarget.GetHolePosition());
+                finalRowHole = hole[0];
+                finalColHole = hole[1];
+            }
+
+            RisolviTranneUltime2Righe(b, bTarget, finalRowHole, finalColHole);
+            RisolviUltime2Righe(b, bTarget, finalRowHole, finalColHole);
+
+            for (int i = b.GetSide() - 1; i > finalRowHole; i--)
+            {
+                b.MoveHoleUp();
+            }
+            for (int i = b.GetSide() - 1; i > finalColHole; i--)
+            {
+                b.MoveHoleLeft();
+            }
         }
 
-        private static void RisolviTranneUltime2Righe(Board b)
+        private static int GetNumberWithHoleTrick(Board bTarget, int index, int finalRowHole, int finalColHole)
+        {
+            int[] c = bTarget.IndexToCoordinate(index);
+
+            // sono sull'utima colonna e su righe sotto il buco
+            if (c[0] >= finalRowHole && c[1] == bTarget.GetSide() - 1)
+                return bTarget.GetNumberFromIndex(index + bTarget.GetSide());
+
+            if (c[0] == finalRowHole && c[1] >= finalColHole)
+                return bTarget.GetNumberFromIndex(index + 1);
+
+            return bTarget.GetNumberFromIndex(index);
+        }
+
+        private static void RisolviTranneUltime2Righe(Board b, Board bTarget, int finalRowHole, int finalColHole)
         {
             for (int numero = 1; numero <= b.Size() - 2 * b.GetSide(); numero++)
             {
-                int index = b.GetIndexOfNumber(numero);
-  
+                int index;
+                if (bTarget != null)
+                {
+                    int numeroLetto = GetNumberWithHoleTrick(bTarget, numero - 1, finalRowHole, finalColHole);
+
+                    index = b.GetIndexOfNumber(numeroLetto); // MOD
+                }
+                else
+                {
+                    index = b.GetIndexOfNumber(numero);
+                }
+
                 //Console.WriteLine("Tocca al numero " + numero);
 
 
@@ -401,7 +478,6 @@ namespace GiocoDel15
                         rowB++;
                     } while (rowB != rowN);
                 }
-                
 
                 if (colB < colN)
                 {
@@ -412,12 +488,21 @@ namespace GiocoDel15
             }
         }
 
-        private static void RisolviUltime2Righe(Board b)
+        private static void RisolviUltime2Righe(Board b, Board bTarget, int finalRowHole, int finalColHole)
         {
             int numero = b.Size() - 2 * b.GetSide() + 1;
             for (int i = 0; i < b.GetSide() - 1; i++, numero++) // occhio che l'ultima iterazione è solo perché entra in casi perticolari gestiti che non da eccezione!!!
             {
-                int index = b.GetIndexOfNumber(numero);
+                int index;
+                if (bTarget != null)
+                {
+                    int numeroLetto = GetNumberWithHoleTrick(bTarget, numero - 1, finalRowHole, finalColHole);
+                    index = b.GetIndexOfNumber(numeroLetto); // MOD
+                }
+                else
+                {
+                    index = b.GetIndexOfNumber(numero);
+                }
 
                 int[] num = b.IndexToCoordinate(index);
                 int rowN = num[0];
@@ -430,7 +515,7 @@ namespace GiocoDel15
                 int rowDest = destinazione[0];
                 int colDest = destinazione[1];
 
-                
+
 
                 PosizionaBuco(b, ref rowN, ref colN, ref rowB, ref colB);
 
@@ -458,8 +543,16 @@ namespace GiocoDel15
                 }
 
                 // numero con una riga in più
-                int index2 = b.GetIndexOfNumber(numero + b.GetSide());
-
+                int index2;
+                if (bTarget != null)
+                {
+                    int numeroLetto = GetNumberWithHoleTrick(bTarget, numero - 1 + b.GetSide(), finalRowHole, finalColHole);
+                    index2 = b.GetIndexOfNumber(numeroLetto);
+                }
+                else
+                {
+                    index2 = b.GetIndexOfNumber(numero + b.GetSide());
+                }
                 num = b.IndexToCoordinate(index2);
                 int rowN2 = num[0];
                 int colN2 = num[1];

@@ -15,6 +15,8 @@ namespace GiocoDel15
         string holeSpaces;
         int numeroMosse = 0;
 
+        int maxSideToPrint = 5;
+
         public Board(int size)
         {
             this.size = size;
@@ -93,9 +95,11 @@ namespace GiocoDel15
             numeroMosse++;
 
             holePosition = newHolePosition;
-
-            //Console.Clear();
-            //Console.WriteLine(ToString());
+            if (side <= maxSideToPrint)
+            {
+                //Console.Clear();
+                Console.WriteLine(ToString());
+            }
         }
 
         /// <exception cref="InvalidOperationException">Se il buco è in ultima riga</exception>
@@ -112,8 +116,11 @@ namespace GiocoDel15
 
             holePosition = newHolePosition;
 
-            //Console.Clear();
-            //Console.WriteLine(ToString());
+            if (side <= maxSideToPrint)
+            {
+                //Console.Clear();
+                Console.WriteLine(ToString());
+            }
         }
 
         /// <exception cref="InvalidOperationException">Se il buco è in prima colonna</exception>
@@ -126,8 +133,11 @@ namespace GiocoDel15
 
             numeroMosse++;
 
-            //Console.Clear();
-            //Console.WriteLine(ToString());
+            if (side <= maxSideToPrint)
+            {
+                //Console.Clear();
+                Console.WriteLine(ToString());
+            }
         }
 
         /// <exception cref="InvalidOperationException">Se il buco è in ultima colonna</exception>
@@ -140,8 +150,11 @@ namespace GiocoDel15
 
             numeroMosse++;
 
-            //Console.Clear();
-            //Console.WriteLine(ToString());
+            if (side <= maxSideToPrint)
+            {
+                //Console.Clear();
+                Console.WriteLine(ToString());
+            }
         }
 
         // 0 1 2 3
